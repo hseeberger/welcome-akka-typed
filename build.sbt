@@ -9,8 +9,10 @@ lazy val `welcome-akka-typed` =
     .settings(settings)
     .settings(
       libraryDependencies ++= Seq(
-        library.scalaCheck % Test,
-        library.scalaTest  % Test
+        library.akkaTyped,
+        library.akkaTypedTestkit % Test,
+        library.scalaCheck       % Test,
+        library.scalaTest        % Test
       )
     )
 
@@ -21,11 +23,14 @@ lazy val `welcome-akka-typed` =
 lazy val library =
   new {
     object Version {
+      val akka       = "2.5.8"
       val scalaCheck = "1.13.5"
       val scalaTest  = "3.0.4"
     }
-    val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
-    val scalaTest  = "org.scalatest"  %% "scalatest"  % Version.scalaTest
+    val akkaTyped        = "com.typesafe.akka" %% "akka-typed"         % Version.akka
+    val akkaTypedTestkit = "com.typesafe.akka" %% "akka-typed-testkit" % Version.akka
+    val scalaCheck       = "org.scalacheck"    %% "scalacheck"         % Version.scalaCheck
+    val scalaTest        = "org.scalatest"     %% "scalatest"          % Version.scalaTest
   }
 
 // *****************************************************************************
@@ -52,8 +57,8 @@ lazy val commonSettings =
       "-target:jvm-1.8",
       "-encoding", "UTF-8"
     ),
-    unmanagedSourceDirectories.in(Compile) := Seq(scalaSource.in(Compile).value),
-    unmanagedSourceDirectories.in(Test) := Seq(scalaSource.in(Test).value)
+    Compile / unmanagedSourceDirectories := Seq((Compile / scalaSource).value),
+    Test / unmanagedSourceDirectories := Seq((Test / scalaSource).value)
 )
 
 lazy val gitSettings =
@@ -63,7 +68,5 @@ lazy val gitSettings =
 
 lazy val scalafmtSettings =
   Seq(
-    scalafmtOnCompile := true,
-    scalafmtOnCompile.in(Sbt) := false,
-    scalafmtVersion := "1.3.0"
+    scalafmtOnCompile := true
   )
