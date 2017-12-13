@@ -32,8 +32,32 @@ object Transfer {
 
   sealed trait Command
 
+  private final case class HandleInsufficientBalance(balance: Long) extends Command
+  private final case object HandleWithdrawn                         extends Command
+  private final case object HandleDeposited                         extends Command
+
   def apply(amount: Long, from: ActorRef[Withdraw], to: ActorRef[Deposit]): Behavior[Command] =
-    ???
+    Actor.deferred { context =>
+      from ! Withdraw(amount, context.spawnAdapter({
+        case InsufficientBalance(balance) => HandleInsufficientBalance(balance)
+        case Withdrawn                    => HandleWithdrawn
+      }))
+
+      Actor.immutablePartial {
+        case (_, HandleInsufficientBalance(balance)) =>
+          println(s"Aborting transfer of $amount because of insufficient balance $balance!")
+          Actor.stopped
+
+        case (context, HandleWithdrawn) =>
+          to ! Deposit(amount, context.spawnAdapter(_ => HandleDeposited))
+
+          Actor.immutablePartial {
+            case (_, HandleDeposited) =>
+              println("Transfer done")
+              Actor.stopped
+          }
+      }
+    }
 }
 
 object TransferMain {
