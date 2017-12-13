@@ -25,18 +25,19 @@ import akka.typed.scaladsl.Actor
   */
 object Account {
 
-  // TODO Adapt untyped protocol to Akka Typed!
+  sealed trait Command
 
-  final case object GetBalance
+  final case class GetBalance(replyTo: ActorRef[Balance]) extends Command
   final case class Balance(balance: Long)
 
-  final case class Deposit(amount: Long)
+  final case class Deposit(amount: Long, replyTo: ActorRef[Deposited.type]) extends Command
   final case object Deposited
 
-  final case class Withdraw(amount: Long)
-  final case class InsufficientBalance(balance: Long)
-  final case object Withdrawn
+  final case class Withdraw(amount: Long, replyTo: ActorRef[WithdrawReply]) extends Command
+  sealed trait WithdrawReply
+  final case class InsufficientBalance(balance: Long) extends WithdrawReply
+  final case object Withdrawn                         extends WithdrawReply
 
-  def apply(balance: Long = 0): Behavior[Nothing] =
+  def apply(balance: Long = 0): Behavior[Command] =
     ???
 }
