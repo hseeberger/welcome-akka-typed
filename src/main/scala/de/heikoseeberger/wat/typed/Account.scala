@@ -39,5 +39,22 @@ object Account {
   final case object Withdrawn                         extends WithdrawReply
 
   def apply(balance: Long = 0): Behavior[Command] =
-    ???
+    Actor.immutable {
+      case (_, GetBalance(replyTo)) =>
+        replyTo ! Balance(balance)
+        Actor.same
+
+      case (_, Deposit(amount, replyTo)) =>
+        replyTo ! Deposited
+        Account(balance + amount)
+
+      case (_, Withdraw(amount, replyTo)) =>
+        if (balance < amount) {
+          replyTo ! InsufficientBalance(balance)
+          Actor.same
+        } else {
+          replyTo ! Withdrawn
+          Account(balance - amount)
+        }
+    }
 }
