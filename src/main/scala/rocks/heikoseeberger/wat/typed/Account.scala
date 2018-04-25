@@ -17,25 +17,44 @@
 package rocks.heikoseeberger.wat
 package typed
 
-import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ ActorRef, Behavior }
 
 /**
   * A typed actor with an immutable behavior, i.e. one that doesn't close over mutable state.
   */
 object Account {
 
-  // TODO Adapt untyped protocol to Akka Typed!
+  sealed trait Command
 
-  final case object GetBalance
+  final case class GetBalance(replyTo: ActorRef[Balance]) extends Command
   final case class Balance(balance: Long)
 
-  final case class Deposit(amount: Long)
+  final case class Deposit(amount: Long, replyTo: ActorRef[Deposited.type]) extends Command
   final case object Deposited
 
-  final case class Withdraw(amount: Long)
-  final case class InsufficientBalance(balance: Long)
-  final case object Withdrawn
+  final case class Withdraw(amount: Long, replyTo: ActorRef[WithdrawReply]) extends Command
+  sealed trait WithdrawReply
+  final case object InsufficientBalance extends WithdrawReply
+  final case object Withdrawn           extends WithdrawReply
 
-  def apply(balance: Long = 0): Behavior[Nothing] =
-    ???
+  def apply(balance: Long = 0): Behavior[Command] =
+    Behaviors.receiveMessage {
+      case GetBalance(replyTo) =>
+        replyTo ! Balance(balance)
+        Behaviors.same
+
+      case Deposit(amount, replyTo) =>
+        replyTo ! Deposited
+        Account(balance + amount)
+
+      case Withdraw(amount, replyTo) =>
+        if (balance < amount) {
+          replyTo ! InsufficientBalance
+          Behaviors.same
+        } else {
+          replyTo ! Withdrawn
+          Account(balance - amount)
+        }
+    }
 }
