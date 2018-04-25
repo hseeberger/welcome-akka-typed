@@ -9,8 +9,7 @@ lazy val `welcome-akka-typed` =
     .settings(settings)
     .settings(
       libraryDependencies ++= Seq(
-        library.scalaCheck % Test,
-        library.utest      % Test
+        library.akkaActorTyped
       )
     )
 
@@ -21,11 +20,9 @@ lazy val `welcome-akka-typed` =
 lazy val library =
   new {
     object Version {
-      val scalaCheck = "1.13.5"
-      val utest      = "0.6.4"
+      val akka = "2.5.12"
     }
-    val scalaCheck = "org.scalacheck" %% "scalacheck" % Version.scalaCheck
-    val utest      = "com.lihaoyi"    %% "utest"      % Version.utest
+    val akkaActorTyped = "com.typesafe.akka" %% "akka-actor-typed" % Version.akka
   }
 
 // *****************************************************************************
@@ -38,7 +35,7 @@ lazy val settings =
 
 lazy val commonSettings =
   Seq(
-    scalaVersion := "2.12.4",
+    scalaVersion := "2.12.6",
     organization := "rocks.heikoseeberger",
     organizationName := "Heiko Seeberger",
     startYear := Some(2018),

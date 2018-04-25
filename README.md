@@ -1,6 +1,6 @@
-# welcome-akka-typed #
+# Welcome Akka Typed #
 
-Welcome to welcome-akka-typed!
+Demo code for my "Farewell Any => Unit, welcome Akka Typed!" talk.
 
 ## Contribution policy ##
 
