@@ -23,7 +23,7 @@ import akka.actor.typed.{ ActorRef, ActorSystem, Behavior, Terminated }
 /**
   * A typed actor for a transfer:
   *   - First send `Withdraw` to `from`.
-  *   - Then abort if the reply is `HandleInsufficientBalance`,
+  *   - Then abort if the reply is `InsufficientBalance`,
   *   - else send `Deposit` to `to`.
   *   - Finally stop after receiving `Deposited`.
   */
@@ -32,8 +32,32 @@ object Transfer {
 
   sealed trait Command
 
+  private final case object HandleInsufficientBalance extends Command
+  private final case object HandleWithdrawn           extends Command
+  private final case object HandleDeposited           extends Command
+
   def apply(amount: Long, from: ActorRef[Withdraw], to: ActorRef[Deposit]): Behavior[Command] =
-    ???
+    Behaviors.setup { context =>
+      from ! Withdraw(amount, context.messageAdapter({
+        case InsufficientBalance => HandleInsufficientBalance
+        case Withdrawn           => HandleWithdrawn
+      }))
+
+      Behaviors.receivePartial {
+        case (_, HandleInsufficientBalance) =>
+          println(s"Aborting transfer of $amount because of insufficient balance!")
+          Behaviors.stopped
+
+        case (context, HandleWithdrawn) =>
+          to ! Deposit(amount, context.messageAdapter(_ => HandleDeposited))
+
+          Behaviors.receiveMessagePartial {
+            case HandleDeposited =>
+              println("Transfer done")
+              Behaviors.stopped
+          }
+      }
+    }
 }
 
 object TransferMain {
